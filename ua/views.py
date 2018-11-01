@@ -86,8 +86,19 @@ def check_phone(req):
         ret['msg'] = "用GET方法无法完成check_phone请求，请改用POST方法"
         return HttpResponse(json.dumps(ret, ensure_ascii=False))
 
+'''
+used to register the phone number
+and send message to verify the phone number
+(one phone number refers to one person)
+
+http_params:
+    phone: phone number
+
+http_rets:
+    msg: information
+    status: -1(fail) 1(success)
+'''
 @csrf_exempt
-# params: {phone_number}
 def send_phone(req):
     if(req.method == "POST"):
         query = req.POST.dict()
@@ -103,7 +114,11 @@ def send_phone(req):
             return HttpResponse(json.dumps(ret, ensure_ascii=False))
         users_query = User.objects.filter(phone=query['phone'])
         user = None
-        if users_query.count()>0:
+        if users_query.count()>1:
+            ret['msg'] = "手机号存在重复情况，有问题请联系管理员"
+            ret['status'] = -1
+            return HttpResponse(json.dumps(ret, ensure_ascii=False))
+        if users_query.count()==1:
             user = users_query[0]
             if user.is_phone_verified:
                 ret['msg'] = "手机号码已激活"
@@ -128,6 +143,19 @@ def send_phone(req):
         ret['msg'] = "用GET方法无法完成send_phone请求，请改用POST方法"
         return HttpResponse(json.dumps(ret, ensure_ascii=False))
 
+
+'''
+use when phone has been verified
+then user loads in his password
+
+http_params:
+    phone: phone number
+    password: user password 
+
+http_rets:
+    msg: info
+    status: -1(failure) 1(success)
+'''
 @csrf_exempt
 def signup(req):
     if(req.method == "POST"):
@@ -135,7 +163,7 @@ def signup(req):
         ret = {}
         if not('phone' in query):
             ret['msg'] = '未提供手机号，无法完成注册'
-            ret['status'] = 1
+            ret['status'] = -1
             return HttpResponse(json.dumps(ret, ensure_ascii=False))
         if not(is_valid_phone(query['phone'])):
             ret['msg'] = "手机号码不符合要求"
@@ -183,19 +211,20 @@ def login(req):
     if(req.method == "POST"):
         query = req.POST.dict()
         ret = {}
-        if 'username' in query:
-            user = User.objects.filter(username=query['username'])
-            if user.count() == 1:
-                if check_password(query['password'], user[0].password):
-                    ret["status"] = 1
-                    ret["msg"] = '登录成功'
-                else:
-                    ret["status"] = 0
-                    ret["msg"] = '密码错误'
+        user = None
+        if 'phone' in query:
+            user = User.objects.filter(username=query['phone'])
+        if user!=None and user.count() == 1:
+            if check_password(query['password'], user[0].password):
+                ret["status"] = 1
+                ret["msg"] = '登录成功'
             else:
-                ret["status"] = -1
-                ret["msg"] = '用户不存在'
-            return HttpResponse(json.dumps(ret, ensure_ascii=False))
+                ret["status"] = 0
+                ret["msg"] = '密码错误'
+        else:
+            ret["status"] = -1
+            ret["msg"] = '用户不存在'
+        return HttpResponse(json.dumps(ret, ensure_ascii=False))
         ret['msg'] = "无效请求"
         return HttpResponse(json.dumps(ret, ensure_ascii=False))
 
