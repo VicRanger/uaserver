@@ -4,6 +4,15 @@ from django.utils import timezone
 
 
 class User(models.Model):
+    '''
+        verify_op: 
+            'password'
+            'login'
+        verify_st:
+            '-1'(nothing) 
+            '0'(code sent) 
+            '1'(verified)
+    '''
     create_time = models.DateTimeField(default=timezone.now)
     update_time = models.DateTimeField(default=timezone.now)
     login_time = models.DateTimeField(null=True)
@@ -16,8 +25,9 @@ class User(models.Model):
     email = models.CharField(max_length=265, default="暂无邮箱")
     is_phone_verified = models.BooleanField(default=False)
     is_activated = models.BooleanField(default=False)
-    idcode = models.CharField(max_length=10,default="")
-    idcode_time = models.DateTimeField(default=timezone.now)
+    verify_code_time = models.DateTimeField(default=timezone.now)
+    verify_op = models.CharField(max_length=20,default="")
+    verify_st = models.CharField(max_length=10,default="-1")
     def __str__(self):
         return str(self.pk) + " " + self.phone
 
