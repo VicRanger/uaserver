@@ -7,6 +7,9 @@ from .models import User
 import re
 import random
 from django.utils import timezone
+from .cloudservice import requestSmsCode, verifySmsCode
+from .qnservice import uploadImg
+import time
 # Create your views here.
 
 
@@ -72,18 +75,16 @@ def check_phone(req):
             ret['msg'] = "没有找到该手机号的预留信息，确认手机已收到验证码后再次发送请求"
             ret['status'] = -1
             return HttpResponse(json.dumps(ret, ensure_ascii=False))
-        if not('idcode' in query):
-            ret['msg'] = "手机号码已找到，但未提供验证码"
-            ret['status'] = -1
-            return HttpResponse(json.dumps(ret, ensure_ascii=False))
-        if query['idcode'] == user.idcode:
-            user.is_phone_verified = False
+        res = verifySmsCode(query['phone'], query['code'])
+        print(str(res)+" in checkphone")
+        if res == {}:
+            user.is_phone_verified = True
             user.save()
             ret['msg'] = "手机号码验证成功"
             ret['status'] = 1
             return HttpResponse(json.dumps(ret, ensure_ascii=False))
         else:
-            ret['msg'] = "手机号码已找到，但验证码错误"
+            ret['msg'] = "手机号码验证失败"
             ret['status'] = -1
             return HttpResponse(json.dumps(ret, ensure_ascii=False))
     if(req.method == "GET"):
@@ -97,6 +98,10 @@ def check_phone(req):
 used to register the phone number
 and send message to verify the phone number
 (one phone number refers to one person)
+
+eg: base_url/send_phone
+
+method: POST
 
 http_params:
     phone: phone number
@@ -139,12 +144,10 @@ def send_phone(req):
             user.phone = query['phone']
             user.save()
             ret['msg'] = "手机号码已创建，但未激活"
-        idcode = "%04d" % (random.randint(0, 9999))
-        ret['idcode'] = idcode
-        user.idcode = idcode
-        user.idcode_time = timezone.now
+        requestSmsCode(query['phone'])
+        user.verify_code_time = timezone.now()
+        ret['msg'] += "，已发送验证码"
         user.save()
-        ret['status'] = 1
         return HttpResponse(json.dumps(ret, ensure_ascii=False))
     if(req.method == "GET"):
         query = req.GET.dict()
@@ -224,18 +227,19 @@ def login(req):
         ret = {}
         user = None
         if 'phone' in query:
-            user = User.objects.filter(username=query['phone'])
-        if user != None and user.count() == 1:
-            if check_password(query['password'], user[0].password):
-                ret["status"] = 1
-                ret["msg"] = '登录成功'
+            user = User.objects.filter(phone=query['phone'])
+            print(user)
+            if user != None and user.count() == 1:
+                if check_password(query['password'], user[0].password):
+                    ret["status"] = 1
+                    ret["msg"] = '登录成功'
+                else:
+                    ret["status"] = 0
+                    ret["msg"] = '密码错误'
             else:
-                ret["status"] = 0
-                ret["msg"] = '密码错误'
-        else:
-            ret["status"] = -1
-            ret["msg"] = '用户不存在'
-        return HttpResponse(json.dumps(ret, ensure_ascii=False))
+                ret["status"] = -1
+                ret["msg"] = '用户不存在'
+            return HttpResponse(json.dumps(ret, ensure_ascii=False))
         return HttpResponse(json.dumps(ret, ensure_ascii=False))
 
 
@@ -300,3 +304,49 @@ def user(req):
             ret['query'] = query
             ret['msg'] = "查询成功"
         return HttpResponse(json.dumps(ret, ensure_ascii=False))
+
+
+def update_active_time(user):
+    user.active_time = timezone.now
+    user.save()
+
+
+uploadTime = time.time()
+uploadTimeLimit = 2
+@csrf_exempt
+def upload_img(req):
+    global uploadTime,uploadTimeLimit
+    ret = {}
+    deltaTime = uploadTime+uploadTimeLimit-time.time()
+    if deltaTime>0:
+        ret["status"] = -1
+        ret["query"] = req.POST
+        ret["msg"] = '上传过于频繁，请%f秒后再试' % (deltaTime)
+        print(ret)
+        return HttpResponse(json.dumps(ret, ensure_ascii=False))
+    pic = req.FILES.get('file')
+    if not(pic):
+        ret["status"] = -1
+        ret["query"] = req.POST
+        ret["msg"] = '未提供图片文件'
+        print(ret)
+        return HttpResponse(json.dumps(ret, ensure_ascii=False))
+    imgName = req.POST.get('fileName')
+    if not(imgName) or len(imgName)==0:
+        ret["status"] = -1
+        ret["query"] = req.POST
+        ret["msg"] = '未提供图片名称或者名称不合法'
+        print(ret)
+        return HttpResponse(json.dumps(ret, ensure_ascii=False))
+    from django.core.files.storage import default_storage
+    from django.core.files.base import ContentFile
+    imgName += str(int(time.time()*1000))[-6:]
+    imgUrl = './temp/'+imgName+'.jpg'
+    path = default_storage.save(imgUrl, ContentFile(pic.read()))
+    uploadImg(imgUrl,imgName)
+    uploadTime = time.time()
+    ret["status"] = 1
+    ret["imgName"] = imgName
+    ret["msg"] = '上传成功'
+    print(ret)
+    return HttpResponse(json.dumps(ret, ensure_ascii=False))

@@ -9,11 +9,14 @@ REQUEST_URL = "requestSmsCode"
 VERIFY_URL = "verifySmsCode/"
 BASE_URL = "https://9alcel5i.api.lncld.net/1.1/"
 
+ID = "9AlcEl5iVqDbpUsq8BzkSlS2-gzGzoHsz"
+KEY = "fuKDntmDe6s6yg53vhQgW5vu"
+
 
 def post(url, data):
     headers = {
-        "X-LC-Id": "9AlcEl5iVqDbpUsq8BzkSlS2-gzGzoHsz",
-        "X-LC-Key": "fuKDntmDe6s6yg53vhQgW5vu",
+        "X-LC-Id": ID,
+        "X-LC-Key": KEY,
         "Content-Type": "application/json",
     }
     baseUrl = BASE_URL
@@ -23,8 +26,7 @@ def post(url, data):
 
 
 def test():
-    leancloud.init("9AlcEl5iVqDbpUsq8BzkSlS2-gzGzoHsz",
-                   "fuKDntmDe6s6yg53vhQgW5vu")
+    leancloud.init(ID, KEY)
     TestObject = leancloud.Object.extend('TestObject')
     test_object = TestObject()
     test_object.set('words', "Hello World!")
@@ -44,5 +46,4 @@ def verifySmsCode(number, code):
 
 
 # print(requestSmsCode(15306872269))
-print(verifySmsCode(15306872269,215414))
-
+# print(verifySmsCode(15306872269,338623))

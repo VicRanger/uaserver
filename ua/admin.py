@@ -14,7 +14,7 @@ class UserAdmin(admin.ModelAdmin):
             'fields':('create_time', 'update_time','login_time',)
         }],
         ['Activation',{
-            'fields':('is_phone_verified','is_activated','idcode',)
+            'fields':('is_phone_verified','is_activated',)
         }]
     )
 

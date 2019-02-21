@@ -10,4 +10,5 @@ urlpatterns = [
     path('login',views.login,name="login"),
     path('send_phone',views.send_phone,name="send_phone"),
     path('check_phone',views.check_phone,name="check_phone"),
+    path('upload_img',views.upload_img,name="upload_img"),
 ]

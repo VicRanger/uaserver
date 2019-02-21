@@ -15,9 +15,10 @@ class User(models.Model):
     '''
     create_time = models.DateTimeField(default=timezone.now)
     update_time = models.DateTimeField(default=timezone.now)
+    active_time = models.DateTimeField(null=True)
     login_time = models.DateTimeField(null=True)
     phone = models.CharField(max_length=32)
-    password = models.CharField(max_length=512)
+    password = models.CharField(max_length=512,null=True)
     raw_password = models.CharField(max_length=512)
     username = models.CharField(max_length=64, default="暂无用户名")
     nickname = models.CharField(max_length=64, default="暂无昵称")
@@ -25,7 +26,7 @@ class User(models.Model):
     email = models.CharField(max_length=265, default="暂无邮箱")
     is_phone_verified = models.BooleanField(default=False)
     is_activated = models.BooleanField(default=False)
-    verify_code_time = models.DateTimeField(default=timezone.now)
+    verify_code_time = models.DateTimeField(null=True)
     verify_op = models.CharField(max_length=20,default="")
     verify_st = models.CharField(max_length=10,default="-1")
     def __str__(self):

@@ -24,9 +24,11 @@ SECRET_KEY = '=au_o2lju$x@apt(7wiv_e#qzt+hrnq!fpkr)drwnrjyn&er69'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
-
+# 允许所有ip访问
+ALLOWED_HOSTS = ['*']
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_HEADERS = ('*')
 
 # Application definition
 
@@ -38,11 +40,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',    
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -107,13 +111,13 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Asia/Shanghai'
-
+# 国际化支持
 USE_I18N = True
-
+# 本地化支持
 USE_L10N = True
-
+# 开启时区
 USE_TZ = False
-
+# 添加斜杠，这样网址就不用再加了
 APPEND_SLASH = True
 
 # Static files (CSS, JavaScript, Images)
